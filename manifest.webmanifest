@@ -1,0 +1,17 @@
+{
+  "name": "SamMPurna MNC Dashboards — Odisha NHM",
+  "short_name": "SamMPurna",
+  "description": "ANC and HBNC/HBYC/PNC dashboards and offline new-entry forms for Odisha NHM",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#120c08",
+  "theme_color": "#120c08",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
