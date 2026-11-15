@@ -163,12 +163,22 @@ html #gate .box{flex:none;margin:0 auto;}
   html #gate .box{margin:0;}
 }
 </style>
+<style id="net-install-style">
+.netpill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid #2e2015;border-radius:99px;font:600 12px system-ui,Segoe UI,Arial,sans-serif;color:#f5e9de;background:#1c130c;white-space:nowrap;flex:none}
+.netpill i{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+.netpill.off{color:#facc15;border-color:rgba(250,204,21,.55)}
+.netpill.off i{background:#facc15;box-shadow:0 0 0 3px rgba(250,204,21,.25)}
+#gate .netpill{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:2}
+#gate button.ghost{background:transparent;border:1px solid #fb923c;color:#fb923c;margin-top:10px}
+@media (max-width:640px){header h1{flex:1 1 0 !important;min-width:0}}
+</style>
 </head>
 <body>
-<div id="gate"><div class="box"><h2>SamMPurna MNC Dashboards</h2><p>Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
-<select id="gateDist"></select><select id="gateBlock" style="display:none"></select><select id="gateFacSel" style="display:none"></select><input id="gatePass" type="password" placeholder="Passcode" autocomplete="off"><button type="button" class="viewpw" id="gateView">View passcode</button><div class="err" id="gateErr"></div><button type="button" id="gateBtn">Open dashboard</button><p style="text-align:center;margin:10px 0 0"><a href="#" id="gateOffline" style="color:#fb923c;font-size:13px;text-decoration:underline">Use offline (no cloud) / ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ବିନା)</a></p></div></div>
+<div id="gate"><span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span><div class="box"><h2>SamMPurna MNC Dashboards</h2><p>Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
+<select id="gateDist"></select><select id="gateBlock" style="display:none"></select><select id="gateFacSel" style="display:none"></select><input id="gatePass" type="password" placeholder="Passcode" autocomplete="off"><button type="button" class="viewpw" id="gateView">View passcode</button><div class="err" id="gateErr"></div><button type="button" id="gateBtn">Open dashboard</button><button type="button" id="gateInstall" class="ghost" hidden>Install app / ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ</button><p style="text-align:center;margin:10px 0 0"><a href="#" id="gateOffline" style="color:#fb923c;font-size:13px;text-decoration:underline">Use offline (no cloud) / ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ବିନା)</a></p></div></div>
 <header>
   <h1>SamMPurna <span>MNC Dashboards</span> — Odisha NHM</h1>
+  <span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span>
   <div id="lockbadge"><span id="cloudCtl" style="display:none;align-items:center;gap:6px;"><button type="button" onclick="cloudSave()">☁ Save records to cloud</button><button type="button" onclick="cloudLoad()">☁ Load latest</button><span id="cloudStatus"></span></span><span>Viewing: <b id="lockName"></b></span><button type="button" id="logoutBtn" onclick="districtLogout()" title="Log out">⏻ Log out</button></div>
   <div class="switcher" id="main-dashboard-tabs">
   <button id="btn-hbnc" class="active" type="button" onclick="showTab('hbnc')">HBNC / HBYC / PNC</button>
@@ -1787,11 +1797,35 @@ async function cloudLoadModule(key, silent){
     n.onclick=function(){b.remove();};b.appendChild(n);
     document.body.appendChild(b);
   }
+  /* Online (green) / Offline (yellow) badge on the cover page and in the header */
+  function netUpd(){
+    var on=navigator.onLine!==false;
+    document.querySelectorAll('.netpill').forEach(function(p){
+      p.classList.toggle('off',!on);
+      p.lastElementChild.textContent=on?'Online':'Offline';
+      p.setAttribute('aria-label',on?'Online':'Offline');
+    });
+  }
+  window.addEventListener('online',netUpd);window.addEventListener('offline',netUpd);netUpd();
+  /* Install: button on the cover page (shown unless already installed) */
+  var gi=document.getElementById('gateInstall');
+  var isApp=function(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;};
+  var gateOpen=function(){var g=document.getElementById('gate');return !!g&&getComputedStyle(g).display!=='none';};
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(gi){
+    gi.hidden=isApp();
+    gi.onclick=function(){
+      if(dip){dip.prompt();dip.userChoice.then(function(){dip=null;});}
+      else bar(ios?'Tap Share, then Add to Home Screen':'Open the browser menu (\u22EE) and tap Install app or Add to Home screen','OK',function(){});
+    };
+  }
   window.addEventListener('beforeinstallprompt',function(e){
     e.preventDefault();dip=e;
-    if(matchMedia('(display-mode: standalone)').matches) return;
-    bar('Install SamMPurna as an app','Install',function(){dip.prompt();dip=null;});
+    if(isApp()) return;
+    if(gi) gi.hidden=false;
+    if(!gateOpen()) bar('Install SamMPurna as an app','Install',function(){dip.prompt();dip=null;});
   });
+  window.addEventListener('appinstalled',function(){dip=null;if(gi)gi.hidden=true;});
   if('serviceWorker' in navigator && location.protocol!=='file:'){
     window.addEventListener('load',function(){
       navigator.serviceWorker.register('sw.js').catch(function(){});
