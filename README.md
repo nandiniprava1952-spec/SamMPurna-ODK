@@ -97,7 +97,16 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - HBNC also searches the WhatsApp number; search results show the village.
 
 ## Install as an app (PWA)
-Open the live site once online. Android/Chrome: tap the **Install** bar (or menu → Install app). iPhone/Safari: Share → Add to Home Screen. After that it opens full-screen and works offline. Needs `manifest.webmanifest`, `sw.js` and the icon PNGs committed next to `index.html`; when you replace `index.html`, users see a "new version is ready — Reload" bar.
+Open the live site once online. Android/Chrome: tap the **Install** bar (or menu → Install app). iPhone/Safari: Share → Add to Home Screen. After that it opens full-screen and works offline. Needs `manifest.webmanifest`, `sw.js` and the icon PNGs committed next to `index.html`; when you replace `index.html`, installed apps pick it up through the in-app update flow below.
+
+## In-app update flow
+1. **Update found** – the app checks for a new version when it opens, when you return to it, when the phone comes back online, and every 30 minutes. If one exists, a card appears at the top with a circular progress ring and a percentage, labelled *Downloading update…*.
+2. **Update ready** – at 100% the card changes to *Update available* with **Update** and **Later** buttons. **Later** hides the card until the next check (the downloaded copy is kept, so it reappears instantly).
+3. **Installing** – **Update** shows a spinning ring with *Installing update…*, then the app restarts on its own.
+4. **After the restart** – *✔ Updated to the latest version* appears for a few seconds.
+
+How it works: `sw.js` serves the cached app (cache `sammpurna-shell-v2`) and no longer swaps in a new `index.html` silently. The page compares the `ETag` (or `Last-Modified`) of `index.html` on GitHub Pages with the one it has cached, downloads the new file into a staging cache with real progress, and only replaces the running copy when **Update** is tapped. Saved offline entries are not touched (they live in the browser's own storage, not in the app cache). Checks need internet; offline the app just keeps running the installed version.
+To release: replace `index.html` and commit as before – nothing else to change. Only bump `CACHE` in `sw.js` if you change `sw.js` itself in a way that needs a fresh shell.
 
 ## Update the dashboard
 Replace `index.html` with the new revision and commit to `main`. GitHub Pages redeploys in ~1 minute.

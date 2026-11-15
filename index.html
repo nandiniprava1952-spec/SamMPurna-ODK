@@ -172,6 +172,39 @@ html #gate .box{flex:none;margin:0 auto;}
 #gate button.ghost{background:transparent;border:1px solid #fb923c;color:#fb923c;margin-top:10px}
 @media (max-width:640px){header h1{flex:1 1 0 !important;min-width:0}}
 </style>
+<style id="sm-upd-style">
+.smu{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;z-index:100000;width:min(calc(100vw - 20px),460px);
+  display:flex;align-items:center;gap:12px;padding:10px 12px;background:#1c130c;color:#f5e9de;border:1px solid #fb923c;border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.55);font:13px system-ui,Segoe UI,Arial,sans-serif;
+  transform:translate(-50%,-150%);opacity:0;visibility:hidden;pointer-events:none;
+  transition:transform .32s ease,opacity .32s ease,visibility 0s linear .32s}
+.smu.on{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s}
+.smu-ic{position:relative;width:44px;height:44px;flex:none}
+.smu-ic svg{width:44px;height:44px;display:block}
+.smu-ic circle{fill:none;stroke-width:4}
+.smu-trk{stroke:#2e2015}
+.smu-bar{stroke:#fb923c;stroke-linecap:round;stroke-dasharray:113.1;stroke-dashoffset:113.1;transform:rotate(-90deg);transform-origin:22px 22px;transition:stroke-dashoffset .25s linear}
+.smu-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:-.2px}
+.smu-tx{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.smu-t{font-size:14px;font-weight:700;line-height:1.25}
+.smu-s{color:#c9a58c;font-size:12px;line-height:1.3}
+.smu-act{display:none;gap:8px;flex:none}
+.smu-act button{font:700 13px system-ui,Segoe UI,Arial,sans-serif;min-height:38px;padding:0 14px;border-radius:9px;cursor:pointer}
+.smu-go{background:#fb923c;color:#120c08;border:0}
+.smu-later{background:transparent;color:#c9a58c;border:1px solid #2e2015}
+.smu-go:active{background:#f97316}
+.smu[data-s=ready] .smu-act{display:flex}
+.smu[data-s=ready] .smu-bar{stroke-dashoffset:0}
+.smu[data-s=inst] .smu-bar{stroke-dashoffset:84.8;transition:none}
+.smu[data-s=inst] svg{animation:smuSpin .9s linear infinite}
+.smu[data-s=inst] .smu-pct{display:none}
+.smu[data-s=done]{border-color:#22c55e}
+.smu[data-s=done] .smu-bar{stroke:#22c55e;stroke-dashoffset:0}
+.smu[data-s=done] .smu-pct{color:#22c55e;font-size:18px}
+@keyframes smuSpin{to{transform:rotate(360deg)}}
+@media (max-width:380px){.smu-act button{padding:0 10px}}
+@media (prefers-reduced-motion:reduce){.smu{transition:opacity .2s}}
+</style>
 </head>
 <body>
 <div id="gate"><span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span><div class="box"><h2>SamMPurna MNC Dashboards</h2><p>Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
@@ -1783,7 +1816,7 @@ async function cloudLoadModule(key, silent){
 
 
 <script>
-/* PWA: register service worker + install button + update notice (top-level page only) */
+/* PWA: register service worker + install button + in-app update flow (top-level page only) */
 (function(){
   if(window.top!==window.self) return;
   var dip=null;
@@ -1826,14 +1859,170 @@ async function cloudLoadModule(key, silent){
     if(!gateOpen()) bar('Install SamMPurna as an app','Install',function(){dip.prompt();dip=null;});
   });
   window.addEventListener('appinstalled',function(){dip=null;if(gi)gi.hidden=true;});
-  if('serviceWorker' in navigator && location.protocol!=='file:'){
+  /* ---------- Update flow: check -> download (ring) -> Update / Later -> install (spinner) -> restart -> "Updated" ----------
+     Checks when the app opens, when you return to it, when the phone comes back online, and every 30 minutes.
+     The new index.html is downloaded into a staging cache; it only replaces the running copy when the user taps Update. */
+  if('serviceWorker' in navigator && location.protocol!=='file:' && window.caches){
     window.addEventListener('load',function(){
       navigator.serviceWorker.register('sw.js').catch(function(){});
     });
-    navigator.serviceWorker.addEventListener('message',function(e){
-      if(e.data&&e.data.type==='SW_UPDATED')
-        bar('A new version is ready','Reload',function(){location.reload();});
-    });
+    (function(){
+      var CACHE='sammpurna-shell-v2', STAGE='sammpurna-stage';
+      var IDX=new URL('index.html',location.href).href, VER=new URL('__ver.json',location.href).href;
+      var SMALL=['manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png'];
+      var EVERY=30*60*1000, MIN_GAP=20000;
+      var st='idle', busy=false, lastChk=0, card=null, hideT=0;
+      var C=113.1; /* ring circumference (r=18) */
+
+      function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+      function jres(o){return new Response(JSON.stringify(o),{headers:{'Content-Type':'application/json'}});}
+      function metaOf(res,size){return {etag:res.headers.get('etag')||'',lm:res.headers.get('last-modified')||'',size:size||0,t:Date.now()};}
+      function norm(e){return String(e||'').replace(/^W\//,'').replace(/"/g,'');}
+      function same(a,b){ /* true = same version (or cannot tell, so do not nag) */
+        if(!a||!b) return true;
+        if(a.etag&&b.etag) return norm(a.etag)===norm(b.etag);
+        if(a.lm&&b.lm) return a.lm===b.lm;
+        return true;
+      }
+      function readMeta(name){
+        return caches.open(name).then(function(c){return c.match(VER);}).then(function(r){return r?r.json():null;}).catch(function(){return null;});
+      }
+      /* the page must be controlled by the new service worker (the old one would answer the download from its cache) */
+      function swReady(){
+        return new Promise(function(res){
+          var c=navigator.serviceWorker.controller; if(!c) return res(false);
+          var ch=new MessageChannel(), t=setTimeout(function(){res(false);},1500);
+          ch.port1.onmessage=function(e){clearTimeout(t);res(!!(e.data&&e.data.v>=2));};
+          try{c.postMessage({type:'PING'},[ch.port2]);}catch(e){clearTimeout(t);res(false);}
+        });
+      }
+
+      /* ---------- card ---------- */
+      function ui(){
+        if(card) return card;
+        card=document.createElement('div');
+        card.className='smu'; card.setAttribute('role','status'); card.setAttribute('aria-live','polite'); card.setAttribute('aria-hidden','true');
+        card.innerHTML=
+          '<div class="smu-ic"><svg viewBox="0 0 44 44" aria-hidden="true"><circle class="smu-trk" cx="22" cy="22" r="18"/><circle class="smu-bar" cx="22" cy="22" r="18"/></svg><b class="smu-pct"></b></div>'+
+          '<div class="smu-tx"><span class="smu-t"></span><span class="smu-s"></span></div>'+
+          '<div class="smu-act"><button type="button" class="smu-go">Update</button><button type="button" class="smu-later">Later</button></div>';
+        card.querySelector('.smu-go').onclick=install;
+        card.querySelector('.smu-later').onclick=function(){hide();};   /* hidden until the next check */
+        document.body.appendChild(card);
+        return card;
+      }
+      function q(s){return ui().querySelector(s);}
+      function prog(p){
+        q('.smu-pct').textContent=p+'%';
+        q('.smu-bar').style.strokeDashoffset=String(C*(1-p/100));
+      }
+      function show(s,p){
+        clearTimeout(hideT);
+        var c=ui(); st=s; c.setAttribute('data-s',s); c.setAttribute('aria-hidden','false');
+        var t=q('.smu-t'), u=q('.smu-s'), pc=q('.smu-pct');
+        if(s==='dl'){ t.textContent='Downloading update\u2026'; u.textContent='You can keep using the app'; pc.textContent=''; q('.smu-bar').style.strokeDashoffset=String(C); prog(p||0); }
+        else if(s==='ready'){ t.textContent='Update available'; u.textContent='Tap Update to restart the app'; pc.textContent='\u2191'; q('.smu-bar').style.strokeDashoffset='0'; }
+        else if(s==='inst'){ t.textContent='Installing update\u2026'; u.textContent='The app will restart on its own'; q('.smu-bar').style.strokeDashoffset=''; }
+        else if(s==='done'){ t.textContent='\u2714 Updated to the latest version'; u.textContent=''; pc.textContent=''; }
+        void c.offsetWidth; c.classList.add('on');
+      }
+      function hide(){
+        st='idle';
+        if(card){ card.classList.remove('on'); card.setAttribute('aria-hidden','true'); }
+      }
+
+      /* ---------- download into the staging cache ---------- */
+      async function download(){
+        show('dl',0);
+        await caches.delete(STAGE);
+        var res=await fetch('index.html?__chk='+Date.now(),{cache:'reload'});
+        if(!res.ok) throw new Error('http '+res.status);
+        var enc=res.headers.get('content-encoding'), len=+res.headers.get('content-length')||0;
+        var cur=await readMeta(CACHE);
+        var est=enc?((cur&&cur.size)||0):len;       /* decoded size: exact when not compressed, else last version's size */
+        var parts=[], loaded=0, last=-1;
+        if(res.body&&res.body.getReader){
+          var rd=res.body.getReader();
+          for(;;){
+            var x=await rd.read(); if(x.done) break;
+            parts.push(x.value); loaded+=x.value.length;
+            if(est){ var p=Math.min(99,Math.floor(loaded*100/est)); if(p!==last){last=p;prog(p);} }
+          }
+        }else{
+          var ab=await res.arrayBuffer(); parts.push(new Uint8Array(ab)); loaded=ab.byteLength;
+        }
+        if(!enc&&len&&loaded!==len) throw new Error('incomplete');
+        if(cur&&cur.size&&loaded<cur.size*0.5) throw new Error('too small');
+        var blob=new Blob(parts,{type:'text/html'}); parts=null;
+        var meta=metaOf(res,blob.size);
+        var sc=await caches.open(STAGE);
+        await sc.put(IDX,new Response(blob,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
+        await sc.put(VER,jres(meta));                /* written last = marks the staged copy complete */
+        prog(100);
+        await sleep(450);
+        show('ready');
+      }
+
+      /* ---------- check ---------- */
+      async function check(){
+        if(busy||st==='inst') return;
+        busy=true; lastChk=Date.now();
+        try{
+          navigator.serviceWorker.getRegistration().then(function(r){return r&&r.update();}).catch(function(){});
+          if(!(await swReady())) return;
+          var cur=await readMeta(CACHE);
+          var r=await fetch('index.html?__chk='+Date.now(),{method:'HEAD',cache:'no-store'});
+          if(!r.ok) return;
+          var remote=metaOf(r);
+          if(!cur){ await (await caches.open(CACHE)).put(VER,jres(remote)); return; }   /* no baseline yet: assume what we have is current */
+          if(same(cur,remote)){ if(st!=='idle') hide(); caches.delete(STAGE); return; }
+          var sm=await readMeta(STAGE), sc=await caches.open(STAGE);
+          if(sm&&same(sm,remote)&&await sc.match(IDX)){ show('ready'); return; }       /* already downloaded (e.g. they tapped Later) */
+          await download();
+        }catch(e){
+          if(st==='dl') hide();                       /* offline / interrupted: quietly try again at the next check */
+        }finally{ busy=false; }
+      }
+
+      /* ---------- install + restart ---------- */
+      async function install(){
+        if(st!=='ready') return;
+        show('inst'); var t0=Date.now();
+        try{
+          var sc=await caches.open(STAGE), mc=await caches.open(CACHE);
+          var idx=await sc.match(IDX), ver=await sc.match(VER);
+          if(!idx||!ver) throw new Error('staged copy missing');
+          await Promise.all(SMALL.map(function(u){
+            return fetch(u+'?__chk='+Date.now(),{cache:'reload'}).then(function(r){
+              if(r.ok) return mc.put(new URL(u,location.href).href,r);
+            }).catch(function(){});
+          }));
+          await mc.put(IDX,idx);
+          await mc.put(VER,ver);
+          await caches.delete(STAGE);
+          try{localStorage.setItem('sm_upd_done','1');}catch(e){}
+          var w=1300-(Date.now()-t0); if(w>0) await sleep(w);
+          location.reload();
+        }catch(e){
+          hide(); setTimeout(check,500);
+        }
+      }
+
+      /* ---------- triggers ---------- */
+      try{
+        if(localStorage.getItem('sm_upd_done')){          /* we just restarted after an update */
+          localStorage.removeItem('sm_upd_done');
+          show('done'); hideT=setTimeout(hide,4500);
+        }
+      }catch(e){}
+      window.addEventListener('load',function(){setTimeout(check,1500);});                       /* app opened */
+      navigator.serviceWorker.addEventListener('controllerchange',function(){setTimeout(check,800);});
+      document.addEventListener('visibilitychange',function(){                                   /* returned to the app */
+        if(document.visibilityState==='visible'&&Date.now()-lastChk>MIN_GAP) check();
+      });
+      window.addEventListener('online',function(){ if(Date.now()-lastChk>MIN_GAP) check(); });
+      setInterval(check,EVERY);                                                                  /* every 30 minutes */
+    })();
   }
 })();
 </script>
