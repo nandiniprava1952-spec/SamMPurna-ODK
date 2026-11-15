@@ -205,9 +205,19 @@ html #gate .box{flex:none;margin:0 auto;}
 @media (max-width:380px){.smu-act button{padding:0 10px}}
 @media (prefers-reduced-motion:reduce){.smu{transition:opacity .2s}}
 </style>
+<style id="gate-lang-style">
+/* Language button: top-left corner of the login screen (mirror of the Online pill, top-right) */
+#gate button#gateLang{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:12px;z-index:2;
+  width:auto;height:28px;min-height:0;padding:0 13px;margin:0;border-radius:99px;box-sizing:border-box;
+  background:#1c130c;color:#fb923c;border:1px solid #fb923c;font:700 12.5px/1 system-ui,Segoe UI,Arial,sans-serif;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#gate button#gateLang:active{background:#2e2015}
+#gate button#gateLang:focus-visible{outline:2px solid #fb923c;outline-offset:2px}
+#gate.lang-or,#gate.lang-or *{font-family:"Noto Sans Oriya","Nirmala UI","Kalinga",system-ui,Segoe UI,Arial,sans-serif}
+</style>
 </head>
 <body>
-<div id="gate"><span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span><div class="box"><h2>SamMPurna MNC Dashboards</h2><p>Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
+<div id="gate"><span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span><button type="button" id="gateLang" aria-label="Language / ଭାଷା" title="Language / ଭାଷା">ଓଡ଼ିଆ</button><div class="box"><h2>SamMPurna MNC Dashboards</h2><p>Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.</p>
 <select id="gateDist"></select><select id="gateBlock" style="display:none"></select><select id="gateFacSel" style="display:none"></select><input id="gatePass" type="password" placeholder="Passcode" autocomplete="off"><button type="button" class="viewpw" id="gateView">View passcode</button><div class="err" id="gateErr"></div><button type="button" id="gateBtn">Open dashboard</button><button type="button" id="gateInstall" class="ghost" hidden>Install app / ଆପ୍ ଇନଷ୍ଟଲ୍ କରନ୍ତୁ</button><p style="text-align:center;margin:10px 0 0"><a href="#" id="gateOffline" style="color:#fb923c;font-size:13px;text-decoration:underline">Use offline (no cloud) / ଅଫଲାଇନ୍ ବ୍ୟବହାର କରନ୍ତୁ (କ୍ଲାଉଡ୍ ବିନା)</a></p></div></div>
 <header>
   <h1>SamMPurna <span>MNC Dashboards</span> — Odisha NHM</h1>
@@ -2024,6 +2034,81 @@ async function cloudLoadModule(key, silent){
       setInterval(check,EVERY);                                                                  /* every 30 minutes */
     })();
   }
+})();
+</script>
+<script>
+/* Login-screen language toggle (English <-> ଓଡ଼ିଆ). Translates the login box; the choice is stored in the same
+   setting the New Entry forms use (localStorage "sampurna_oe_lang": en / or / both), so the forms follow it. */
+(function(){
+  var KEY='sampurna_oe_lang', gate=document.getElementById('gate'), btn=document.getElementById('gateLang');
+  if(!gate||!btn) return;
+  var DICT={
+    "Select your district, then your block (and your facility, if you have a facility login) and enter your passcode. You will only see your own district's, block's or facility's records.":"ପ୍ରଥମେ ଆପଣଙ୍କ ଜିଲ୍ଲା, ତା'ପରେ ବ୍ଲକ୍ (ଏବଂ ସଂସ୍ଥା ଲଗଇନ୍ ଥିଲେ ଆପଣଙ୍କ ସଂସ୍ଥା) ବାଛି ପାସକୋଡ୍ ଦିଅନ୍ତୁ। ଆପଣ କେବଳ ନିଜ ଜିଲ୍ଲା, ବ୍ଲକ୍ କିମ୍ବା ସଂସ୍ଥାର ରେକର୍ଡ ଦେଖିପାରିବେ।",
+    "Select district…":"ଜିଲ୍ଲା ବାଛନ୍ତୁ…",
+    "State / Admin (all districts)":"ରାଜ୍ୟ / ଆଡମିନ୍ (ସମସ୍ତ ଜିଲ୍ଲା)",
+    "District login (all blocks)":"ଜିଲ୍ଲା ଲଗଇନ୍ (ସମସ୍ତ ବ୍ଲକ୍)",
+    "Block login (all facilities)":"ବ୍ଲକ୍ ଲଗଇନ୍ (ସମସ୍ତ ସଂସ୍ଥା)",
+    "Passcode":"ପାସକୋଡ୍","Facility passcode":"ସଂସ୍ଥା ପାସକୋଡ୍",
+    "View passcode":"ପାସକୋଡ୍ ଦେଖନ୍ତୁ","Hide passcode":"ପାସକୋଡ୍ ଲୁଚାନ୍ତୁ",
+    "Open dashboard":"ଡ୍ୟାସବୋର୍ଡ ଖୋଲନ୍ତୁ",
+    "Please select your district.":"ଦୟାକରି ଆପଣଙ୍କ ଜିଲ୍ଲା ବାଛନ୍ତୁ।",
+    "Please select your facility.":"ଦୟାକରି ଆପଣଙ୍କ ସଂସ୍ଥା ବାଛନ୍ତୁ।",
+    "Incorrect passcode.":"ଭୁଲ ପାସକୋଡ୍।",
+    "Online":"ଅନଲାଇନ୍","Offline":"ଅଫଲାଇନ୍"
+  };
+  var PAT=[[/^Block: (.+)$/,"ବ୍ଲକ୍: $1"],[/^Facility: (.+)$/,"ସଂସ୍ଥା: $1"]];
+  var LANG='en'; try{ LANG = localStorage.getItem(KEY)==='or' ? 'or' : 'en'; }catch(e){}
+  function tr(t){
+    if(!/[A-Za-z]/.test(t)) return null;
+    var m=t.match(/^(\s*)([\s\S]*?)(\s*)$/), core=m[2];
+    if(Object.prototype.hasOwnProperty.call(DICT,core)) return m[1]+DICT[core]+m[3];
+    for(var i=0;i<PAT.length;i++) if(PAT[i][0].test(core)) return m[1]+core.replace(PAT[i][0],PAT[i][1])+m[3];
+    return null;
+  }
+  var tOrig=new WeakMap(), aOrig=new WeakMap(), ATTRS=['placeholder','aria-label'];
+  function doText(n){
+    var rec=tOrig.get(n), cur=n.nodeValue;
+    if(rec && cur===rec.tr){ if(LANG==='en'){ n.nodeValue=rec.en; tOrig.delete(n); } return; }
+    if(rec) tOrig.delete(n);
+    if(LANG==='or'){ var t=tr(cur); if(t!=null && t!==cur){ tOrig.set(n,{en:cur,tr:t}); n.nodeValue=t; } }
+  }
+  function doAttr(el){
+    var rec=aOrig.get(el)||{};
+    ATTRS.forEach(function(a){
+      if(el===btn || !el.hasAttribute || !el.hasAttribute(a)) return;
+      var cur=el.getAttribute(a), r=rec[a];
+      if(r && cur===r.tr){ if(LANG==='en'){ el.setAttribute(a,r.en); delete rec[a]; } return; }
+      if(r) delete rec[a];
+      if(LANG==='or'){ var t=tr(cur); if(t!=null && t!==cur){ rec[a]={en:cur,tr:t}; el.setAttribute(a,t); } }
+    });
+    aOrig.set(el,rec);
+  }
+  function walk(root){
+    if(root.nodeType===3){ doText(root); return; }
+    if(root.nodeType!==1 || root===btn) return;
+    doAttr(root);
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT,null), n;
+    while((n=w.nextNode())){ if(n.nodeType===3) doText(n); else if(n!==btn) doAttr(n); }
+  }
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      if(m.type==='characterData') doText(m.target);
+      else if(m.type==='attributes') doAttr(m.target);
+      else m.addedNodes.forEach(walk);
+    });
+  }).observe(gate,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:ATTRS});
+  function apply(){
+    document.documentElement.lang = LANG==='or' ? 'or' : 'en';
+    gate.classList.toggle('lang-or', LANG==='or');
+    btn.textContent = LANG==='or' ? 'English' : 'ଓଡ଼ିଆ';
+    walk(gate);
+  }
+  btn.addEventListener('click',function(){
+    LANG = LANG==='or' ? 'en' : 'or';
+    try{ localStorage.setItem(KEY,LANG); }catch(e){}
+    apply();
+  });
+  apply();
 })();
 </script>
 </body>

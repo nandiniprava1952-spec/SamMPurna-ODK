@@ -116,3 +116,6 @@ Offline entries are stored in the browser for the exact address the page is open
 
 ## Do NOT commit
 Raw Kobo/CSV/Excel exports or any beneficiary data (blocked by `.gitignore`).
+
+## Language button on the login screen
+A **ଓଡ଼ିଆ / English** button sits in the top-left corner of the login screen (the Online / Offline pill is top-right). It switches the login screen between English and Odia. The choice is saved in the same setting the New Entry forms use (`sampurna_oe_lang`), so the forms open in the language chosen at login (the form's own English / ଓଡ଼ିଆ / both selector still works and stays in sync).
