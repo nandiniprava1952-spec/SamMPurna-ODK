@@ -8,6 +8,9 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Rev 136
+- **New "⟳ Sync from ODK" button (all logins, including facility logins).** Next to "Save records to cloud" and "Load latest". It asks the cloud script to fetch the newest ODK Central submissions right now (the script also does this by itself every 15 minutes), then reloads the open module from the cloud (a facility login receives only its own facility's records). It needs the OdkIngest.gs add-on and the `odksync` action in the cloud script. Nothing else in the dashboard changed.
+
 ### Rev 135
 - **ANC on phones: the Visit date From / To filter boxes are now clearly visible.** They were bare, unlabelled native date boxes (and could show blank or collapsed on some phones). Each now has a label ("Visit date from" / "Visit date to"), the dark theme, a full-width 44 px box on phones, and the same look on larger screens. Filtering itself is unchanged.
 - **ANC: fixes the "Page unresponsive" prompt on large files.** The danger-sign and High Risk Pregnancy checks were recalculated for every record on every load, filter change and redraw, and date text was re-parsed each time. They are now calculated once per record and cached (an edited record is recalculated), dates are parsed / formatted once per distinct value, and a filter change now redraws once instead of twice (typing in the search box waits 0.25 s). In a 20,000-visit test loading went from about 3.3 s to 1.5 s and a redraw from about 0.44 s to 0.17 s. Results are unchanged.

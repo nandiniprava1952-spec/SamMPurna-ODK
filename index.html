@@ -235,7 +235,7 @@ html #gate .box{flex:none;margin:0 auto;}
 <header>
   <h1>SamMPurna <span>MNC Dashboards</span> — Odisha NHM</h1>
   <span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span>
-  <div id="lockbadge"><span id="cloudCtl" style="display:none;align-items:center;gap:6px;"><button type="button" onclick="cloudSave()">☁ Save records to cloud</button><button type="button" onclick="cloudLoad()">☁ Load latest</button><span id="cloudStatus"></span></span><span>Viewing: <b id="lockName"></b></span><button type="button" id="logoutBtn" onclick="districtLogout()" title="Log out" aria-label="Log out"><svg class="lo-ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg><span>Log out</span></button></div>
+  <div id="lockbadge"><span id="cloudCtl" style="display:none;align-items:center;gap:6px;"><button type="button" onclick="cloudSave()">☁ Save records to cloud</button><button type="button" onclick="cloudLoad()">☁ Load latest</button><button type="button" id="odkSyncBtn" onclick="odkSyncNow()" title="Fetch the newest ODK Central submissions now" style="display:none">⟳ Sync from ODK</button><span id="cloudStatus"></span></span><span>Viewing: <b id="lockName"></b></span><button type="button" id="logoutBtn" onclick="districtLogout()" title="Log out" aria-label="Log out"><svg class="lo-ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg><span>Log out</span></button></div>
   <div class="switcher" id="main-dashboard-tabs">
   <button id="btn-hbnc" class="active" type="button" onclick="showTab('hbnc')">HBNC / HBYC / PNC</button>
   <button id="btn-anc" type="button" onclick="showTab('anc')">ANC Home Visit</button>
@@ -1709,6 +1709,33 @@ async function cloudLoadModule(key, silent){
     }).catch(function(){});
   }
   function cloudLoad(){ return cloudLoadModule(lastDashboard, false); }
+  // "Sync from ODK": the server (Apps Script) fetches the newest ODK Central submissions and saves them into the
+  // block snapshots; then the open module is reloaded from the cloud. The ODK password never reaches the browser.
+  let odkSyncBusy = false;
+  async function odkSyncNow(){
+    if(!REC_URL || !CLOUD_AUTH || !CLOUD_AUTH.pass){ cloudStatus('Sign in with cloud access to sync from ODK.', true); return; }
+    if(odkSyncBusy) return;
+    const key = lastDashboard || 'hbnc';
+    if(cloudBusy[key]){ cloudStatus('Another cloud save / load is running. Try again in a moment.', true); return; }
+    odkSyncBusy = true;
+    const btn = document.getElementById('odkSyncBtn'); if(btn) btn.disabled = true;
+    try{
+      cloudStatus('Syncing from ODK Central... (can take a minute)');
+      const j = await recCall('odksync', { module: key });
+      if(j.changed || j.reload){   // reload also when someone else synced a moment ago
+        cloudStatus((j.msg || 'ODK sync finished.') + ' Loading the latest records...');
+        const ok = await cloudLoadModule(key, false);
+        if(ok !== false) cloudStatus((j.msg || 'ODK sync finished.') + ' Loaded the latest records.');
+      } else {
+        cloudStatus(j.msg || 'ODK sync finished. Nothing new.');
+      }
+    }catch(e){
+      cloudStatus('ODK sync failed: ' + (e && e.message ? e.message : e), true);
+    }finally{
+      odkSyncBusy = false;
+      if(btn) btn.disabled = false;
+    }
+  }
   function cloudAutoLoad(key){ if(REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) cloudLoadModule(key, true); }
   // ================== end records cloud sync ==================
 
@@ -1728,8 +1755,9 @@ async function cloudLoadModule(key, silent){
     const badge = document.getElementById('lockbadge');
     badge.style.display = 'flex';
     if(REC_URL) document.getElementById('cloudCtl').style.display = 'inline-flex';
+    try{ var ob = document.getElementById('odkSyncBtn'); if(ob) ob.style.display = (REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) ? '' : 'none'; }catch(e){}
     document.getElementById('lockName').textContent = DISTRICT_LOCK ? (DISTRICT_LOCK.facilityName ? DISTRICT_LOCK.facilityName + ' facility' : DISTRICT_LOCK.blockName ? DISTRICT_LOCK.name + ' \u203a ' + DISTRICT_LOCK.blockName + ' block' : DISTRICT_LOCK.name + ' district') : 'All districts (State)';
-    document.getElementById('lockName').textContent += '  \u00b7  Rev 135';   // shows which build is running
+    document.getElementById('lockName').textContent += '  \u00b7  Rev 136';   // shows which build is running
     document.getElementById('btn-training').style.display = DISTRICT_LOCK ? 'none' : '';   // Training Tracker: State login only
     cloudPull();
     cloudWarm('hbnc');
@@ -1819,7 +1847,7 @@ async function cloudLoadModule(key, silent){
       DISTRICT_LOCK = null; CLOUD_AUTH = null;
       try{ sessionStorage.removeItem('sm_district_auth'); localStorage.removeItem('sm_district_auth'); }catch(x){}
       startDashboards();
-      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 135';
+      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 136';
       var lb = document.getElementById('logoutBtn'); if(lb) lb.style.display = 'none';
     };
     document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
