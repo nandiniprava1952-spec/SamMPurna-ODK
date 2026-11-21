@@ -155,6 +155,14 @@ body{height:100vh;height:100dvh;}
   #main-dashboard-tabs #logoutBtn{padding:8px 9px;font-size:12.5px;}
 }
 </style>
+<style id="tabs-fill">
+/* Rev 135: on phones the dashboard tabs share the full row width (two tabs fill the screen side by side; three still fit, text wraps) */
+@media (max-width:640px){
+  #main-dashboard-tabs{display:flex;flex-wrap:nowrap;width:100%;overflow-x:visible;gap:6px;}
+  #main-dashboard-tabs button{flex:1 1 0 !important;min-width:0;white-space:normal !important;text-align:center;line-height:1.2;padding:8px 6px;display:flex;align-items:center;justify-content:center;}
+  #main-dashboard-tabs button[style*="display: none"]{display:none !important;}
+}
+</style>
 <style id="gate-bg">
 /* Login page: cover image (transparent background, blends with the dark page) on top, login box beneath; side by side on wide screens */
 html #gate{flex-direction:column;justify-content:flex-start;align-items:center;overflow-y:auto;
