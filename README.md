@@ -8,6 +8,13 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Rev 134
+- **HBNC / HBYC / PNC: designation labels corrected.** The HBNC form saves the worker's designation as 1 = Medical Officer, 3 = CHO, 4 = ANM, 5 = ASHA, 6 = MPW (7 = Nursing Officer kept). The dashboard had 2 = CHO, 3 = ANM, 4 = ASHA, 5 = Data Entry Operator, so ANMs were shown as ASHA, CHOs as ANM and ASHAs as Data Entry Operator. Fixed everywhere a designation is shown or chosen (Worker column, Designation filter, "Visits by Designation" cards, record detail, "＋ New Entry" list). The codes were confirmed by matching HBNC workers to the ANC export by mobile number. Raw data is unchanged. Codes 2 and Data Entry Operator are no longer listed because no record uses them; tell us if the form has them under another number.
+- Note: HBNC entries made with "＋ New Entry" before Rev 134 were saved with the old numbering and will show a different designation now. Check and correct them with Edit. If a device has an uploaded designation list (code master upload), clear it so the built-in list applies.
+
+### Rev 133
+- **ANC on phones: the filter boxes are no longer huge.** On narrow screens the filters are stacked in a column, but each dropdown still had a "140 px" flex size that was applied as its height, and the searchable Block / Facility boxes copied it. All filter controls (Records filters and the Home chart controls) now keep their normal height and the full width. No change on larger screens.
+
 ### Rev 132
 - **ANC: designation labels corrected - code 2 is ANM and code 3 is CHO (they were the other way round).** In the ANC form data, `user_designation` 1 = MO, 2 = ANM, 3 = CHO. The dashboard showed 2 as CHO and 3 as ANM, so every ANM was listed as a CHO (and every CHO as an ANM). Fixed in the Worker (Designation) column, the Designation filter, the "Visits by Designation" cards, the Worker Type chart choices and the record detail view. The "＋ New Entry" Designation list now saves the right code too (order: MO, ANM, CHO). The raw data is unchanged. HBNC is not changed in this revision.
 - Note: ANC entries made with the PWA's "＋ New Entry" before Rev 132 were saved with the old numbering (choosing CHO saved 2, choosing ANM saved 3), so on the dashboard they now show the opposite designation. Check and correct them with Edit.
