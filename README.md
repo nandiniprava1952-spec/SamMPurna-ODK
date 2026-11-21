@@ -8,6 +8,9 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Rev 129
+- **New Entry: "Existing beneficiary? Search to pre-fill" no longer copies the previous visit's worker name and designation.** Before, an ANM adding a repeat visit could be saved as the CHO (or MO) who made the earlier visit. Worker name and designation now stay as the person typed or selected them (they still carry over with Save & add another).
+
 ### Rev 126
 - **Treatment Tracker (State login): records with no treatment data can now be deleted.** Ticked records that have treatment data are cleared as before; ticked records with no treatment data are removed from the Treatment Tracker list (the visit stays in the dashboard). The removal syncs to the cloud and is covered by **Undo delete**. Uploading a tracker file with data for a removed record brings it back.
 - **Records table (State login): Edit / Delete buttons now also appear for records whose ID is in `meta/instanceID`, `instanceID`, `_id`, `KEY` or `uuid`** (previously only records with a `_uuid` column). Records with no ID column at all still show View only.
