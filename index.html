@@ -116,6 +116,10 @@
 #logoutBtn{background:#dc2626;border:1px solid #ef4444;color:#fff;font-weight:700;font-size:13px;padding:7px 16px;border-radius:8px;letter-spacing:.2px;box-shadow:0 2px 6px rgba(220,38,38,.45);}
 #logoutBtn:hover{background:#b91c1c;border-color:#f87171;}
 #logoutBtn:active{transform:translateY(1px);}
+#logoutBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+#lockbadge #logoutBtn{background:#dc2626;border:1px solid #ef4444;color:#fff;font-weight:700;font-size:13px;padding:6px 14px;min-height:40px;border-radius:8px;box-shadow:0 2px 6px rgba(220,38,38,.45);}
+#lockbadge #logoutBtn:hover{background:#b91c1c;border-color:#f87171;}
+#logoutBtn .lo-ic{flex:0 0 auto;display:block;}
 </style>
 <style id="mobile-layer">
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -126,7 +130,8 @@ body{height:100vh;height:100dvh;}
   header h1{font-size:13.5px;flex:1 1 100%;margin-right:0;}
   #lockbadge{margin-left:0;width:100%;flex-wrap:wrap;gap:6px;}
   #lockbadge button{min-height:36px;padding:6px 10px;}
-  #logoutBtn{min-height:42px;padding:8px 14px;font-size:14px;}
+  #logoutBtn{min-height:40px;padding:6px 14px;font-size:14px;}
+  #lockbadge #logoutBtn{margin-left:auto;flex:0 0 auto;position:static;}
   #main-dashboard-tabs button{padding:8px 10px;font-size:12.5px;}
   #main-dashboard-tabs #logoutBtn{flex:0 0 auto;white-space:nowrap;padding:8px 12px;font-size:13px;position:sticky;right:0;}
   #main-dashboard-tabs{width:100%;margin-top:0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;scrollbar-width:none;}
@@ -222,7 +227,7 @@ html #gate .box{flex:none;margin:0 auto;}
 <header>
   <h1>SamMPurna <span>MNC Dashboards</span> — Odisha NHM</h1>
   <span class="netpill" role="status" aria-live="polite" aria-label="Online"><i></i><b>Online</b></span>
-  <div id="lockbadge"><span id="cloudCtl" style="display:none;align-items:center;gap:6px;"><button type="button" onclick="cloudSave()">☁ Save records to cloud</button><button type="button" onclick="cloudLoad()">☁ Load latest</button><span id="cloudStatus"></span></span><span>Viewing: <b id="lockName"></b></span><button type="button" id="logoutBtn" onclick="districtLogout()" title="Log out">⏻ Log out</button></div>
+  <div id="lockbadge"><span id="cloudCtl" style="display:none;align-items:center;gap:6px;"><button type="button" onclick="cloudSave()">☁ Save records to cloud</button><button type="button" onclick="cloudLoad()">☁ Load latest</button><span id="cloudStatus"></span></span><span>Viewing: <b id="lockName"></b></span><button type="button" id="logoutBtn" onclick="districtLogout()" title="Log out" aria-label="Log out"><svg class="lo-ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg><span>Log out</span></button></div>
   <div class="switcher" id="main-dashboard-tabs">
   <button id="btn-hbnc" class="active" type="button" onclick="showTab('hbnc')">HBNC / HBYC / PNC</button>
   <button id="btn-anc" type="button" onclick="showTab('anc')">ANC Home Visit</button>
@@ -235,8 +240,7 @@ html #gate .box{flex:none;margin:0 auto;}
   function place(){
     var b = document.getElementById('logoutBtn'), tabs = document.getElementById('main-dashboard-tabs'), badge = document.getElementById('lockbadge');
     if(!b || !tabs || !badge) return;
-    if(mq.matches){ if(b.parentNode !== tabs) tabs.appendChild(b); }
-    else { if(b.parentNode !== badge) badge.appendChild(b); }
+    if(b.parentNode !== badge) badge.appendChild(b);   /* Rev 135: always in the top badge row (on phones it is pushed to the right; it no longer sits over the tabs) */
   }
   place();
   if(mq.addEventListener) mq.addEventListener('change', place); else if(mq.addListener) mq.addListener(place);
