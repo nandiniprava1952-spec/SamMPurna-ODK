@@ -8,6 +8,16 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Rev 132
+- **ANC: designation labels corrected - code 2 is ANM and code 3 is CHO (they were the other way round).** In the ANC form data, `user_designation` 1 = MO, 2 = ANM, 3 = CHO. The dashboard showed 2 as CHO and 3 as ANM, so every ANM was listed as a CHO (and every CHO as an ANM). Fixed in the Worker (Designation) column, the Designation filter, the "Visits by Designation" cards, the Worker Type chart choices and the record detail view. The "＋ New Entry" Designation list now saves the right code too (order: MO, ANM, CHO). The raw data is unchanged. HBNC is not changed in this revision.
+- Note: ANC entries made with the PWA's "＋ New Entry" before Rev 132 were saved with the old numbering (choosing CHO saved 2, choosing ANM saved 3), so on the dashboard they now show the opposite designation. Check and correct them with Edit.
+
+### Rev 131
+- **New Entry (ANC and HBNC): a carried-over designation no longer sticks to the wrong worker.** After *Save & add another* (or when a beneficiary is picked from the search), the form keeps the previous worker's name and designation. If a different worker (for example an ANM taking over from a CHO) typed their own name but did not touch the Designation box, the entry was saved with the earlier worker's designation. Now, as soon as the worker name is changed, the carried-over designation is cleared, the field is marked and a note asks the worker to select their own designation (it is a required field, so the entry cannot be saved without it). A designation the worker has chosen by hand is never cleared. Entries already saved with the wrong designation are not changed; correct them with Edit.
+
+### Rev 130
+- **HBNC: faster loading of records (fixes the repeated "Page unresponsive" prompt while HBNC data loads).** The per-visit checks for death flags, SNCU/NICU discharge, GPS columns and designation columns each scanned every column of every record with text patterns. The column scan is now done once per column layout and reused. Results are unchanged; building the records is about 5x faster in a 5,000-record test.
+
 ### Rev 129
 - **New Entry: "Existing beneficiary? Search to pre-fill" no longer copies the previous visit's worker name and designation.** Before, an ANM adding a repeat visit could be saved as the CHO (or MO) who made the earlier visit. Worker name and designation now stay as the person typed or selected them (they still carry over with Save & add another).
 
