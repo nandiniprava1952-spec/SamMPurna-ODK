@@ -10,6 +10,7 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 ## What's new in Rev 93
 ### Rev 136
 - **New "⟳ Sync from ODK" button (all logins, including facility logins).** Next to "Save records to cloud" and "Load latest". It asks the cloud script to fetch the newest ODK Central submissions right now (the script also does this by itself every 15 minutes), then reloads the open module from the cloud (a facility login receives only its own facility's records). It needs the OdkIngest.gs add-on and the `odksync` action in the cloud script. Nothing else in the dashboard changed.
+- **PC / tablet header layout.** Log out now sits in the top-right corner right after the Online / Offline pill, and the cloud buttons, status message and "Viewing: ..." line sit on their own row under the title (same in HBNC, ANC and Training Tracker). Phones are unchanged.
 
 ### Rev 135
 - **ANC on phones: the Visit date From / To filter boxes are now clearly visible.** They were bare, unlabelled native date boxes (and could show blank or collapsed on some phones). Each now has a label ("Visit date from" / "Visit date to"), the dark theme, a full-width 44 px box on phones, and the same look on larger screens. Filtering itself is unchanged.

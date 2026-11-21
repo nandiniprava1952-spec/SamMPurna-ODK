@@ -163,6 +163,19 @@ body{height:100vh;height:100dvh;}
   #main-dashboard-tabs button[style*="display: none"]{display:none !important;}
 }
 </style>
+<style id="pc-header">
+/* PC / tablet layout (wider than a phone): Log out sits in the top-right corner right after the Online / Offline pill;
+   the cloud buttons, status message and "Viewing: ..." line sit on their own row under the title. Phones are unchanged. */
+@media (min-width:641px){
+  header{position:relative;}
+  header h1{order:1;}
+  header .netpill{order:2;margin-right:112px;}                       /* leaves room for the Log out button */
+  header #lockbadge{order:3;flex:1 1 100%;margin-left:0;justify-content:flex-start;flex-wrap:wrap;gap:6px 14px;}
+  header #main-dashboard-tabs{order:4;}
+  header #lockbadge #logoutBtn{position:absolute;top:8px;right:16px;margin:0;min-width:96px;z-index:2;}
+}
+</style>
+
 <style id="gate-bg">
 /* Login page: cover image (transparent background, blends with the dark page) on top, login box beneath; side by side on wide screens */
 html #gate{flex-direction:column;justify-content:flex-start;align-items:center;overflow-y:auto;
@@ -1757,7 +1770,7 @@ async function cloudLoadModule(key, silent){
     if(REC_URL) document.getElementById('cloudCtl').style.display = 'inline-flex';
     try{ var ob = document.getElementById('odkSyncBtn'); if(ob) ob.style.display = (REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) ? '' : 'none'; }catch(e){}
     document.getElementById('lockName').textContent = DISTRICT_LOCK ? (DISTRICT_LOCK.facilityName ? DISTRICT_LOCK.facilityName + ' facility' : DISTRICT_LOCK.blockName ? DISTRICT_LOCK.name + ' \u203a ' + DISTRICT_LOCK.blockName + ' block' : DISTRICT_LOCK.name + ' district') : 'All districts (State)';
-    document.getElementById('lockName').textContent += '  \u00b7  Rev 136';   // shows which build is running
+    document.getElementById('lockName').textContent += '  \u00b7  Rev 135';   // shows which build is running
     document.getElementById('btn-training').style.display = DISTRICT_LOCK ? 'none' : '';   // Training Tracker: State login only
     cloudPull();
     cloudWarm('hbnc');
@@ -1847,7 +1860,7 @@ async function cloudLoadModule(key, silent){
       DISTRICT_LOCK = null; CLOUD_AUTH = null;
       try{ sessionStorage.removeItem('sm_district_auth'); localStorage.removeItem('sm_district_auth'); }catch(x){}
       startDashboards();
-      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 136';
+      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 135';
       var lb = document.getElementById('logoutBtn'); if(lb) lb.style.display = 'none';
     };
     document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
