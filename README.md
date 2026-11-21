@@ -8,6 +8,10 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Rev 137
+- **HBNC: no more "Page Unresponsive" right after login (State / large logins).** After login the dashboard loads the saved records from the cloud and then built every record and drew every screen in one long step (a State login is about 28,000 HBNC visits with about 900 columns each), so the browser could show "Page Unresponsive". The cloud load now does the same work in slices of about 1,200 records and draws the screens one after another, giving the browser a turn in between, with the status line showing "Preparing N records ...". The records and the screens are identical to before (checked on a 27,642-visit file). Logging out or starting another load stops a load that is still running. Small loads (under 3,000 records), CSV / Excel loads and ANC are unchanged.
+- The version label now reads Rev 137.
+
 ### Rev 136
 - **New "⟳ Sync from ODK" button (all logins, including facility logins).** Next to "Save records to cloud" and "Load latest". It asks the cloud script to fetch the newest ODK Central submissions right now (the script also does this by itself every 15 minutes), then reloads the open module from the cloud (a facility login receives only its own facility's records). It needs the OdkIngest.gs add-on and the `odksync` action in the cloud script. Nothing else in the dashboard changed.
 - **PC / tablet header layout.** Log out now sits in the top-right corner right after the Online / Offline pill, and the cloud buttons, status message and "Viewing: ..." line sit on their own row under the title (same in HBNC, ANC and Training Tracker). Phones are unchanged.
