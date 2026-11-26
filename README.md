@@ -8,6 +8,9 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 - Existing beneficiary search under "＋ New Entry" (ANC and HBNC): find earlier visits by name, village or mobile and pre-fill the form. Works offline.
 
 ## What's new in Rev 93
+### Near EDD now means "EDD in the current month"
+- **ANC module: "Near EDD" counts beneficiaries whose EDD falls in the current calendar month (1st to the last day, 30 or 31 / 28 or 29 days), not "today to +30 days".** Changed in the Home KPI card, the District Review table and the Summary Report (PDF / Word / Excel), the EDD-ratio metric, and the records filter ("Due this month", replaces "Due in next 30 days"; "Due in next 7 / 14 days" and "Overdue" are unchanged). The Summary Report header now prints "Near EDD window: 1-30 Nov 2026 (current month)". The month is taken from the date the dashboard or report is opened; it does not change with the Visit Date filters. EDDs earlier in the same month are included.
+
 ### Rev 137
 - **HBNC: no more "Page Unresponsive" right after login (State / large logins).** After login the dashboard loads the saved records from the cloud and then built every record and drew every screen in one long step (a State login is about 28,000 HBNC visits with about 900 columns each), so the browser could show "Page Unresponsive". The cloud load now does the same work in slices of about 1,200 records and draws the screens one after another, giving the browser a turn in between, with the status line showing "Preparing N records ...". The records and the screens are identical to before (checked on a 27,642-visit file). Logging out or starting another load stops a load that is still running. Small loads (under 3,000 records), CSV / Excel loads and ANC are unchanged.
 - The version label now reads Rev 137.
