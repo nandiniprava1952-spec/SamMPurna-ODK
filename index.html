@@ -1040,7 +1040,6 @@ html #gate .box{flex:none;margin:0 auto;}
     opts = opts || {};
     const key = (typeof optKey === 'string' && optKey) ? optKey : lastDashboard;
     if(!cloudReady(key) || cloudBusy[key]) return;
-    if(!opts.onlyOffline && partialLoad[key]){ cloudStatus('Save blocked: the ' + MOD_LABEL[key] + ' records on screen are incomplete (the last cloud load did not finish). Click Load latest first, or load your full file with Load New CSV / Excel.', true); return false; }
     const w = frames[key] && frames[key].contentWindow;
     if(!loaded[key] || !w || !w.__cloudGetRows){ cloudStatus('Dashboard not ready yet.', true); return; }
     const got = w.__cloudGetRows();
@@ -1327,7 +1326,6 @@ html #gate .box{flex:none;margin:0 auto;}
     if(!m || m.mchDashboard !== true || m.action !== 'file-loaded') return;
     const key = m.dashboard;
     if(!fileSync[key] || !frames[key] || frames[key].contentWindow !== ev.source) return;
-    partialLoad[key] = false;
     const st = fileSync[key];
     st.pending = true; st.tries = 0; st.count = Number(m.count) || 0; fileHintShown[key] = false;
     if(st.timer) clearTimeout(st.timer);
@@ -1525,33 +1523,18 @@ html #gate .box{flex:none;margin:0 auto;}
     return arr;
   }
   function facWaitDone(key){ try{ var fw = frames[key] && frames[key].contentWindow; if(fw) fw.postMessage({smFacWait:'done'}, '*'); }catch(e){} }   // facility login: tells the dashboard the cloud load has ended (loaded, empty or failed) so New Entry can show
-  // Rev 138: a cloud load that comes back incomplete (snapshots unreadable while a sync is rewriting them, or far fewer
-  // records than before) is retried up to 3 times with a fresh manifest instead of being shown as if it were complete.
-  const partialLoad = {};
-  async function cloudLoadModule(key, silent){
-    const ctx = { prev: 0 };
-    for(let a = 1; ; a++){
-      const r = await cloudLoadModuleOnce(key, silent, a, ctx);
-      if(r !== 'retry') return r;
-      for(let sec = 20; sec > 0; sec -= 5){
-        cloudStatus('Some saved ' + MOD_LABEL[key] + ' data could not be read yet (a cloud sync may be running). Trying again in ' + sec + ' s (attempt ' + (a + 1) + ' of 3)...');
-        await new Promise(function(r2){ setTimeout(r2, 5000); });
-      }
-    }
-  }
-async function cloudLoadModuleOnce(key, silent, attempt, ctx){
+async function cloudLoadModule(key, silent){
     if(!cloudReady(key)){ facWaitDone(key); return false; }
     if(cloudBusy[key]) return false;
     const w = frames[key] && frames[key].contentWindow;
     if(!w || !w.__cloudIngest){ cloudStatus('Dashboard not ready yet.', true); facWaitDone(key); return false; }
     cloudBusy[key] = true;
     let released = false, ingested = false;
-    if(attempt === 1){ try{ ctx.prev = (w.__cloudGetRows && w.__cloudGetRows().rows || []).length; }catch(e){ ctx.prev = 0; } }
     try{
       cloudStatus('Checking cloud for ' + MOD_LABEL[key] + ' records...');
       let j = null;
       const w0 = warm[key];
-      if(attempt === 1 && silent && w0 && Date.now() - w0.t < 120000){ delete warm[key]; try{ j = await w0.manifest; }catch(e){ j = null; } }
+      if(silent && w0 && Date.now() - w0.t < 120000){ delete warm[key]; try{ j = await w0.manifest; }catch(e){ j = null; } }
       if(!j) j = await recCall('manifest', { module: key });
       const ms = j.manifests || [];
       // Facility login: this facility's earlier records (saved by a district / block / State login) are filtered out of the
@@ -1570,7 +1553,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
       // Big data already on screen + the same data arriving from the cloud = two full copies in memory (tab crash).
       // So when memory use is already high, the old copy is dropped first; it is replaced by the cloud data anyway.
       if(!(CLOUD_AUTH && CLOUD_AUTH.facility) && (heapRatio() > 0.3 || (CLOUD_AUTH && CLOUD_AUTH.district === 'ADMIN' && !CLOUD_AUTH.block)) && w.__cloudRelease){
-        try{ w.__cloudRelease(); released = true; ctx.released = true; }catch(e){}
+        try{ w.__cloudRelease(); released = true; }catch(e){}
         await new Promise(function(r){ setTimeout(r, 400); });
       }
       const distMs = ms.filter(function(m){ return DISTRICT_ACCESS[m.scope]; });
@@ -1628,24 +1611,13 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
         });
       }
       distRows.clear(); distMeta.clear(); overrides.clear();   // the rows now live only in `all`
-      const isFac = !!(CLOUD_AUTH && CLOUD_AUTH.facility);
-      const prev = ctx.prev || 0;
-      const dropped = !isFac && prev > 500 && all.length < prev * 0.5;
-      if(failed.length || dropped){
+      if(failed.length){
         const names = failed.join(', ');
-        if(attempt < 3){ distRows.clear(); return 'retry'; }
-        const why = (failed.length ? 'Saved data for ' + names + ' could not be read (incomplete or damaged). ' : '') + (dropped ? 'The cloud returned ' + all.length.toLocaleString() + ' records but ' + prev.toLocaleString() + ' were on screen before. ' : '');
-        if(!released && !ctx.released && prev > 0){
-          cloudStatus('Cloud load incomplete - kept the ' + prev.toLocaleString() + ' records already on screen. ' + why + 'Wait for any sync to finish, then click Load latest again.', true);
-          return false;
-        }
         if(!all.length){ cloudStatus('Cloud load failed: saved data for ' + names + ' looks incomplete or damaged - open the module, load that file, click Save records to cloud, then retry.', true); return false; }
-        { const __nm = 'Cloud (INCOMPLETE, saved ' + new Date(latest).toLocaleString() + ')'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;
-        partialLoad[key] = true;
-        cloudStatus('WARNING: only ' + all.length.toLocaleString() + ' ' + MOD_LABEL[key] + ' records loaded - this is NOT the full data. ' + why + 'Saving to the cloud is blocked. Wait for any sync to finish and click Load latest again (or load your file with Load New CSV / Excel).', true);
-        return false;
+        { const __nm = 'Cloud (saved ' + new Date(latest).toLocaleString() + ')'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;   /* Rev 137: HBNC loads in slices so the page stays responsive */
+        cloudStatus('Loaded ' + all.length.toLocaleString() + ' ' + MOD_LABEL[key] + ' records from cloud. Skipped (saved data incomplete or damaged): ' + names + ' - load that file with Load New CSV / Excel (it is saved and repaired automatically) or click Save records to cloud.', true);
+        return true;
       }
-      partialLoad[key] = false;
       { const __nm = 'Cloud (saved ' + new Date(latest).toLocaleString() + ')'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;   /* Rev 137: HBNC loads in slices so the page stays responsive */
       cloudStatus('Loaded ' + all.length.toLocaleString() + ' ' + MOD_LABEL[key] + ' records from cloud.' + (histErr ? ' (Earlier records of your facility could not be loaded: ' + histErr + ')' : ''), !!histErr);
       return true;
@@ -1655,7 +1627,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
     }finally{
       cloudBusy[key] = false;
       facWaitDone(key);
-      if((released || ctx.released) && !ingested && attempt >= 3) cloudStatus('The cloud load did not finish, and the data on screen was cleared to free memory. Click \u201cLoad latest\u201d again or load your file again.', true);
+      if(released && !ingested) cloudStatus('The cloud load did not finish, and the data on screen was cleared to free memory. Click \u201cLoad latest\u201d again or load your file again.', true);
     }
   }
   function ttScope(e){
@@ -1798,7 +1770,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
     if(REC_URL) document.getElementById('cloudCtl').style.display = 'inline-flex';
     try{ var ob = document.getElementById('odkSyncBtn'); if(ob) ob.style.display = (REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) ? '' : 'none'; }catch(e){}
     document.getElementById('lockName').textContent = DISTRICT_LOCK ? (DISTRICT_LOCK.facilityName ? DISTRICT_LOCK.facilityName + ' facility' : DISTRICT_LOCK.blockName ? DISTRICT_LOCK.name + ' \u203a ' + DISTRICT_LOCK.blockName + ' block' : DISTRICT_LOCK.name + ' district') : 'All districts (State)';
-    document.getElementById('lockName').textContent += '  \u00b7  Rev 138';   // shows which build is running
+    document.getElementById('lockName').textContent += '  \u00b7  Rev 137';   // shows which build is running
     document.getElementById('btn-training').style.display = DISTRICT_LOCK ? 'none' : '';   // Training Tracker: State login only
     cloudPull();
     cloudWarm('hbnc');
@@ -1888,7 +1860,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
       DISTRICT_LOCK = null; CLOUD_AUTH = null;
       try{ sessionStorage.removeItem('sm_district_auth'); localStorage.removeItem('sm_district_auth'); }catch(x){}
       startDashboards();
-      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 138';
+      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 137';
       var lb = document.getElementById('logoutBtn'); if(lb) lb.style.display = 'none';
     };
     document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
