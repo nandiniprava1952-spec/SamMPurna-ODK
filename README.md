@@ -11,6 +11,14 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 ### Near EDD now means "EDD in the current month"
 - **ANC module: "Near EDD" counts beneficiaries whose EDD falls in the current calendar month (1st to the last day, 30 or 31 / 28 or 29 days), not "today to +30 days".** Changed in the Home KPI card, the District Review table and the Summary Report (PDF / Word / Excel), the EDD-ratio metric, and the records filter ("Due this month", replaces "Due in next 30 days"; "Due in next 7 / 14 days" and "Overdue" are unchanged). The Summary Report header now prints "Near EDD window: 1-30 Nov 2026 (current month)". The month is taken from the date the dashboard or report is opened; it does not change with the Visit Date filters. EDDs earlier in the same month are included.
 
+### Rev 143
+- **HBNC Treatment Tracker: earlier treatment data shows again.** Treatment entries (admission, treatment, outcome) are saved per record under a key built from the beneficiary and the visit date. Rev 140 changed how the visit date part is read (the plain date from `today_date_decimal` instead of the full submission timestamp when `visit_date` / `today` are empty), so on the November exports every key changed and every entry saved earlier (on the device and in the cloud) stopped matching its record - the tracker showed "0 with treatment data". A record that has no entry under its current key now picks up the entry saved under its old key (Rev 135 rules; checked on 32,293 of 32,293 records of the 26 Nov export). Old entries are kept, nothing is deleted. It also applies to entries that arrive later through "Sync with cloud" or an Excel / CSV upload. ANC tracker keys did not change and are unaffected.
+- The version label now reads Rev 143.
+
+### Rev 142
+- **HBNC: Newborn / Child danger sign cards now include danger signs recorded at registration.** On a registration visit (the row has the child's name in `child_name_reg`) the newer form stores the danger flag in `danger_sign_child_reg` (1 = yes) and the signs in `child_in_danger_reg`, while `class_child_in_danger` stays 3 for many of these. Those children were not counted. On the 9 Nov export (27,642 visits): Newborn 1,561 -> 1,622 and Child 742 -> 881 (200 more flagged visits: 61 newborn, 139 child); Mother stays 47. The newborn / child split is unchanged (age up to 28 days or not recorded = newborn). ANC unchanged.
+- The version label now reads Rev 142.
+
 ### Rev 141
 - ANC dashboard keeps **Near EDD = due this month** (as in Rev137_EDD_month). All Rev 138-140 fixes are kept (cloud load retry / save guard, new ODK column names, newborn / child danger split by age). Same code as Rev 140, version label Rev 141.
 
