@@ -11,6 +11,16 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 ### Near EDD now means "EDD in the current month"
 - **ANC module: "Near EDD" counts beneficiaries whose EDD falls in the current calendar month (1st to the last day, 30 or 31 / 28 or 29 days), not "today to +30 days".** Changed in the Home KPI card, the District Review table and the Summary Report (PDF / Word / Excel), the EDD-ratio metric, and the records filter ("Due this month", replaces "Due in next 30 days"; "Due in next 7 / 14 days" and "Overdue" are unchanged). The Summary Report header now prints "Near EDD window: 1-30 Nov 2026 (current month)". The month is taken from the date the dashboard or report is opened; it does not change with the Visit Date filters. EDDs earlier in the same month are included.
 
+### Rev 139
+- **New ODK form version understood (columns `class_*`, `*_input`, `*_reg`, `uid_registered`, `today_date_decimal`).** The HBNC dashboard now reads preterm birth (`class_preterm_birth`), low birth weight (`class_low_birth_weight`), child danger sign (`class_child_in_danger`, signs from `danger_sign_child`) and mother danger sign (`class_mother_in_danger`, signs from `danger_sign_mother`) from the newer export, besides the old column names. Old-format rows are read exactly as before.
+- Repeat visits are linked to the beneficiary through `uid_registered` (and the `_reg` name / date-of-birth columns), so Beneficiaries Covered and Repeat Visits are counted per beneficiary.
+- The visit date comes from `today_date_decimal` (when valid) instead of the submission date.
+- Not changed (needs the XLSForm): newborn danger signs (no field in the new export), referral cases, and the child danger-sign labels (new codes D1, D2, D10 ... shown as codes).
+
+### Rev 138
+- **Cloud load no longer shows an incomplete result as if it were the full data (State login: HBNC showed 308 visits instead of ~87,000).** If some saved snapshots cannot be read (for example while an ODK sync is rewriting them) or the cloud returns less than half of what was on screen, the load is retried up to 3 times (20 s apart, fresh manifest). If it still fails and the old data was not cleared, the data on screen is kept and a message says so. If the old data had already been cleared to save memory, the partial records are shown with a clear WARNING and **Save records to cloud is blocked** until a full Load latest or a CSV / Excel load succeeds (offline-entry auto-sync is not affected).
+- The version label now reads Rev 138.
+
 ### Rev 137
 - **HBNC: no more "Page Unresponsive" right after login (State / large logins).** After login the dashboard loads the saved records from the cloud and then built every record and drew every screen in one long step (a State login is about 28,000 HBNC visits with about 900 columns each), so the browser could show "Page Unresponsive". The cloud load now does the same work in slices of about 1,200 records and draws the screens one after another, giving the browser a turn in between, with the status line showing "Preparing N records ...". The records and the screens are identical to before (checked on a 27,642-visit file). Logging out or starting another load stops a load that is still running. Small loads (under 3,000 records), CSV / Excel loads and ANC are unchanged.
 - The version label now reads Rev 137.
