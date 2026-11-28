@@ -11,6 +11,14 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 ### Near EDD now means "EDD in the current month"
 - **ANC module: "Near EDD" counts beneficiaries whose EDD falls in the current calendar month (1st to the last day, 30 or 31 / 28 or 29 days), not "today to +30 days".** Changed in the Home KPI card, the District Review table and the Summary Report (PDF / Word / Excel), the EDD-ratio metric, and the records filter ("Due this month", replaces "Due in next 30 days"; "Due in next 7 / 14 days" and "Overdue" are unchanged). The Summary Report header now prints "Near EDD window: 1-30 Nov 2026 (current month)". The month is taken from the date the dashboard or report is opened; it does not change with the Visit Date filters. EDDs earlier in the same month are included.
 
+### Rev 149
+- **+ New Entry form in offline use ("Use offline (no cloud)") now matches the facility login:** field label "Service provider name" and no Visit number field (a known visit number is still saved). District and block logins do not have the + New Entry form.
+- The version label now reads Rev 149.
+
+### Rev 148
+- **+ New Entry form, facility login (HBNC and ANC):** the "Health worker (ASHA) name" / "Health worker name" field is now labelled "Service provider name" (with Odia text), and the "Visit number" field is no longer shown. A visit number is still saved when it is already known (next number worked out from the person's earlier visits when they are picked from the search, or the number of an entry being edited); otherwise it is left blank and the dashboard works out the visit number from the visit dates. District and other logins are unchanged.
+- The version label now reads Rev 148.
+
 ### Rev 147
 - **Cloud save no longer strips columns from older records.** When records were saved, only the columns of the file currently loaded were kept - for every row, including older cloud records merged in. After a newer CSV (about 900 columns) was saved on top of older records (from the older form, about 1,300 columns, 435 of them not in the newer file), the older records lost columns such as `user_name`, `user_designation`, `user_mobile` and many clinical fields. Those visits then showed no worker and "Not recorded" under Visits by Designation (for example 26 of 44 visits at Badkutru SC-HSC). Saving now keeps every data column a record has; only internal fields (starting with `__`) are left out.
 - **Repair for records already saved:** load the full older export (Load New CSV / Excel) and click "Save records to cloud" once. A record in the file replaces the cloud record with the same ID, so the missing columns come back.
