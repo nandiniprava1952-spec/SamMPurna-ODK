@@ -1628,6 +1628,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
         });
       }
       distRows.clear(); distMeta.clear(); overrides.clear();   // the rows now live only in `all`
+      if(!latest){ ms.forEach(function(m){ if(m && m.savedAt > latest) latest = m.savedAt; }); }   /* Rev 146: a facility login loads its own records, so no district / block snapshot sets the date; never show 01/01/1970 */
       const isFac = !!(CLOUD_AUTH && CLOUD_AUTH.facility);
       const prev = ctx.prev || 0;
       const dropped = !isFac && prev > 500 && all.length < prev * 0.5;
@@ -1640,13 +1641,13 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
           return false;
         }
         if(!all.length){ cloudStatus('Cloud load failed: saved data for ' + names + ' looks incomplete or damaged - open the module, load that file, click Save records to cloud, then retry.', true); return false; }
-        { const __nm = 'Cloud (INCOMPLETE, saved ' + new Date(latest).toLocaleString() + ')'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;
+        { const __nm = latest ? 'Cloud (INCOMPLETE, saved ' + new Date(latest).toLocaleString() + ')' : 'Cloud (INCOMPLETE)'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;
         partialLoad[key] = true;
         cloudStatus('WARNING: only ' + all.length.toLocaleString() + ' ' + MOD_LABEL[key] + ' records loaded - this is NOT the full data. ' + why + 'Saving to the cloud is blocked. Wait for any sync to finish and click Load latest again (or load your file with Load New CSV / Excel).', true);
         return false;
       }
       partialLoad[key] = false;
-      { const __nm = 'Cloud (saved ' + new Date(latest).toLocaleString() + ')'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;   /* Rev 137: HBNC loads in slices so the page stays responsive */
+      { const __nm = latest ? 'Cloud (saved ' + new Date(latest).toLocaleString() + ')' : 'Cloud'; await (w.__cloudIngestAsync ? w.__cloudIngestAsync(all, __nm) : w.__cloudIngest(all, __nm)); } ingested = true;   /* Rev 137: HBNC loads in slices so the page stays responsive */
       cloudStatus('Loaded ' + all.length.toLocaleString() + ' ' + MOD_LABEL[key] + ' records from cloud.' + (histErr ? ' (Earlier records of your facility could not be loaded: ' + histErr + ')' : ''), !!histErr);
       return true;
     }catch(e){
@@ -1798,7 +1799,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
     if(REC_URL) document.getElementById('cloudCtl').style.display = 'inline-flex';
     try{ var ob = document.getElementById('odkSyncBtn'); if(ob) ob.style.display = (REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) ? '' : 'none'; }catch(e){}
     document.getElementById('lockName').textContent = DISTRICT_LOCK ? (DISTRICT_LOCK.facilityName ? DISTRICT_LOCK.facilityName + ' facility' : DISTRICT_LOCK.blockName ? DISTRICT_LOCK.name + ' \u203a ' + DISTRICT_LOCK.blockName + ' block' : DISTRICT_LOCK.name + ' district') : 'All districts (State)';
-    document.getElementById('lockName').textContent += '  \u00b7  Rev 145';   // shows which build is running
+    document.getElementById('lockName').textContent += '  \u00b7  Rev 146';   // shows which build is running
     document.getElementById('btn-training').style.display = DISTRICT_LOCK ? 'none' : '';   // Training Tracker: State login only
     cloudPull();
     cloudWarm('hbnc');
@@ -1888,7 +1889,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
       DISTRICT_LOCK = null; CLOUD_AUTH = null;
       try{ sessionStorage.removeItem('sm_district_auth'); localStorage.removeItem('sm_district_auth'); }catch(x){}
       startDashboards();
-      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 145';
+      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 146';
       var lb = document.getElementById('logoutBtn'); if(lb) lb.style.display = 'none';
     };
     document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
