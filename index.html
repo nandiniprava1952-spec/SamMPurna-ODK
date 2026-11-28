@@ -935,7 +935,14 @@ html #gate .box{flex:none;margin:0 auto;}
     for(const k in DISTRICT_ACCESS){ if(DISTRICT_ACCESS[k].name.toLowerCase() === lab) return k; }
     return null;
   }
-  function pickKeys(r, keys){ const o = {}; for(let i = 0; i < keys.length; i++){ const k = keys[i]; if(r[k] !== undefined) o[k] = r[k]; } return o; }
+  function pickKeys(r, keys){
+    /* Rev 147: keep EVERY data column the row has; only internal "__..." fields are dropped. This used to keep only the columns of the
+       file that was loaded, so saving a newer CSV on top of older cloud rows stripped the older form's columns (user_name,
+       user_designation, user_mobile and ~430 others) from those older rows, and they showed as "Not recorded" afterwards. */
+    const o = {};
+    for(const k in r){ if(k.charCodeAt(0) === 95 && k.charCodeAt(1) === 95) continue; const v = r[k]; if(v !== undefined) o[k] = v; }
+    return o;
+  }
   function cloudReady(key){
     if(!REC_URL) return false;
     if(!CLOUD_AUTH || !CLOUD_AUTH.pass){ cloudStatus('Log out and log in again to use cloud sync.', true); return false; }
@@ -1062,7 +1069,7 @@ html #gate .box{flex:none;margin:0 auto;}
         if(!keySet) return arr;
         return arr.map(function(r){
           let extra = false;
-          for(const k in r){ if(r[k] !== undefined && !keySet.has(k)){ extra = true; break; } }
+          for(const k in r){ if(r[k] !== undefined && k.charCodeAt(0) === 95 && k.charCodeAt(1) === 95){ extra = true; break; } }   /* Rev 147: only internal __ fields are dropped, every data column is kept */
           if(!extra) return r;                                           // already only the known columns: no copy needed
           const o = pickKeys(r, got.keys); if(r._uuid != null && o._uuid === undefined) o._uuid = r._uuid; return o;
         });
@@ -1799,7 +1806,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
     if(REC_URL) document.getElementById('cloudCtl').style.display = 'inline-flex';
     try{ var ob = document.getElementById('odkSyncBtn'); if(ob) ob.style.display = (REC_URL && CLOUD_AUTH && CLOUD_AUTH.pass) ? '' : 'none'; }catch(e){}
     document.getElementById('lockName').textContent = DISTRICT_LOCK ? (DISTRICT_LOCK.facilityName ? DISTRICT_LOCK.facilityName + ' facility' : DISTRICT_LOCK.blockName ? DISTRICT_LOCK.name + ' \u203a ' + DISTRICT_LOCK.blockName + ' block' : DISTRICT_LOCK.name + ' district') : 'All districts (State)';
-    document.getElementById('lockName').textContent += '  \u00b7  Rev 146';   // shows which build is running
+    document.getElementById('lockName').textContent += '  \u00b7  Rev 147';   // shows which build is running
     document.getElementById('btn-training').style.display = DISTRICT_LOCK ? 'none' : '';   // Training Tracker: State login only
     cloudPull();
     cloudWarm('hbnc');
@@ -1889,7 +1896,7 @@ async function cloudLoadModuleOnce(key, silent, attempt, ctx){
       DISTRICT_LOCK = null; CLOUD_AUTH = null;
       try{ sessionStorage.removeItem('sm_district_auth'); localStorage.removeItem('sm_district_auth'); }catch(x){}
       startDashboards();
-      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 146';
+      document.getElementById('lockName').textContent = 'All districts \u00b7 Offline (no cloud)  \u00b7  Rev 147';
       var lb = document.getElementById('logoutBtn'); if(lb) lb.style.display = 'none';
     };
     document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
