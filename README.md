@@ -1,3 +1,7 @@
+### Rev 145
+- **HBNC: the "Not recorded" card under "Visits by Designation" is no longer shown.** It counted visits whose designation is blank and could not be taken from the same worker's other visits. The card now appears only while "Not recorded" is the selected designation filter; the Designation drop-down still offers it, and the "All" card still counts every visit. The 9 Nov and 26 Nov exports have a designation on every visit, so this only affects older / cloud records with a blank designation.
+- The version label now reads Rev 145.
+
 # SAMMPurNA – MNC Dashboards (ANC · HBNC/HBYC/PNC)
 
 Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
@@ -10,20 +14,6 @@ Single-file, offline-capable dashboard for Odisha NHM (Rev 93).
 ## What's new in Rev 93
 ### Near EDD now means "EDD in the current month"
 - **ANC module: "Near EDD" counts beneficiaries whose EDD falls in the current calendar month (1st to the last day, 30 or 31 / 28 or 29 days), not "today to +30 days".** Changed in the Home KPI card, the District Review table and the Summary Report (PDF / Word / Excel), the EDD-ratio metric, and the records filter ("Due this month", replaces "Due in next 30 days"; "Due in next 7 / 14 days" and "Overdue" are unchanged). The Summary Report header now prints "Near EDD window: 1-30 Nov 2026 (current month)". The month is taken from the date the dashboard or report is opened; it does not change with the Visit Date filters. EDDs earlier in the same month are included.
-
-### Rev 147
-- **Cloud save no longer strips columns from older records.** When records were saved, only the columns of the file currently loaded were kept - for every row, including older cloud records merged in. After a newer CSV (about 900 columns) was saved on top of older records (from the older form, about 1,300 columns, 435 of them not in the newer file), the older records lost columns such as `user_name`, `user_designation`, `user_mobile` and many clinical fields. Those visits then showed no worker and "Not recorded" under Visits by Designation (for example 26 of 44 visits at Badkutru SC-HSC). Saving now keeps every data column a record has; only internal fields (starting with `__`) are left out.
-- **Repair for records already saved:** load the full older export (Load New CSV / Excel) and click "Save records to cloud" once. A record in the file replaces the cloud record with the same ID, so the missing columns come back.
-- The version label now reads Rev 147.
-
-### Rev 146
-- **Source file label for facility logins.** A facility login loads its own saved records, so no district or block snapshot set the "saved" time and the label showed "Cloud (saved 01/01/1970, 05:30:00)". The label now uses the latest saved time in the cloud list, or just "Cloud" when there is none.
-- The version label now reads Rev 146.
-
-### Rev 145
-- **HBNC: worker name and designation.** The newer ODK form stores the health worker as `provider_name` / `provider_mobile`; the dashboard only read the older `user_name`, so the worker name was blank for new visits and could not be linked to older visits. Both are now read. A blank designation is filled from the same worker's other visits (shown as "inferred") when those visits all show ONE designation; the worker is recognised by name + district + block + facility, else by mobile number, else by name + district + block.
-- **"Code 2" card:** a designation code that is not in the list (1 Medical Officer, 3 CHO, 4 ANM, 5 ASHA, 6 MPW, 7 Nursing Officer) is now treated as not recorded (and filled from the worker's other visits where possible) instead of getting its own "Code 2" card.
-- The version label now reads Rev 145.
 
 ### Rev 144
 - **HBNC: danger sign codes D1 to D10 of the newer ODK form now show their names.** The form uses one list up to 60 days of age (newborn) and another from 61 days (young child). Newborn list: D1 lethargy (movement only when stimulated / no movement), D2 not able to feed, D3 convulsion, D4 jaundice (yellow palms / soles), D5 fast breathing, D6 severe chest indrawing, D7 yellow palms / feet, D8 blood in stool, D9 fever, D10 low body temperature. Young-child list (shown as YC-D1 ...): D1 not able to feed, D2 vomits everything, D3 lethargy, D4 convulsion, D5 difficult breathing, D7 severe chest indrawing; D6, D8, D9, D10 show as "meaning not confirmed". The meanings were worked out from the 9 Nov 2026 export by matching each code with the individual Yes/No danger sign questions (most match exactly); D4, D5, D7 and D8 should be checked against the XLSForm. The newborn / child split used for counting is unchanged (up to 28 days = newborn); only the label list follows the 60-day rule. The danger sign pop-up shows the matching D-code list.
